@@ -1,4 +1,13 @@
 ---
+layout: post
+title: "UniFi OS Bulletin 064: Unauthenticated RCE Chain (5 CVEs)"
+date: 2026-07-18 12:00:00 +0300
+author: 0xNull
+categories: [cve, pentest, security-research]
+tags: [cve, threat-intel, exploit, defense]
+---
+
+---
 title: "Patching the Ubiquiti UniFi OS Bulletin 064 RCE Chain: A Defender's Walkthrough"
 slug: unifi-os-bulletin-064-walkthrough
 date: 2026-07-13

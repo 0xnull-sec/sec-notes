@@ -1,4 +1,13 @@
 ---
+layout: post
+title: "pwntools from zero: picoCTF buffer overflow 1"
+date: 2026-07-18 12:00:00 +0300
+author: 0xNull
+categories: [cve, pentest, security-research]
+tags: [cve, threat-intel, exploit, defense]
+---
+
+---
 title: "From Zero to pwntools: Turning a CTF Binary Into a Working Exploit"
 slug: pwntools-ctf-walkthrough
 date: 2026-07-13

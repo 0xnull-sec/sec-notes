@@ -1,0 +1,54 @@
+title: 0xNull — sec-notes
+email: 0xnull@github.com
+description: >-
+  Security research notes from 0xNull — pentesting, OSINT, exploit dev, threat hunting, CVE walkthroughs.
+  No fluff — only technical depth.
+url: "https://0xnull-sec.github.io"
+baseurl: "/sec-notes"
+repository: 0xnull-sec/sec-notes
+twitter:
+  username: oxnull_security
+logo: /sec-notes/assets/logo.png
+
+# Build settings
+theme: minima
+plugins:
+  - jekyll-feed
+  - jekyll-seo-tag
+  - jekyll-sitemap
+
+permalink: /posts/:title/
+
+# SEO & social
+author: 0xNull
+social:
+  name: 0xNull
+  links:
+    - https://t.me/oxnull_security
+    - https://github.com/0xnull-sec
+
+# Exclude from processing
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - node_modules
+  - vendor
+  - README.md
+
+markdown: kramdown
+kramdown:
+  input: GFM
+  syntax_highlighter: rouge
+
+# Default front matter defaults
+defaults:
+  - scope:
+      path: ""
+      type: posts
+    values:
+      layout: post
+      author: 0xNull
+  - scope:
+      path: ""
+    values:
+      layout: default
