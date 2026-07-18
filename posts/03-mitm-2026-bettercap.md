@@ -1,0 +1,146 @@
+---
+title: "What MITM Actually Sees in 2026: A Live Walkthrough with bettercap"
+slug: mitm-2026-bettercap-walkthrough
+date: 2026-07-13
+draft: true
+author: Kuzya / CyberShield Division
+tags: [mitm, tls, certificate-pinning, bettercap, network, pentest, defensive]
+platforms: [medium, hashnode, substack]
+description: >
+  We ran a full man-in-the-middle on a loopback lab in 2026 and recorded what came
+  out the other end. TL;DR: HTTP is dead, HTTPS is half-dead, and certificate pinning
+  is the only thing standing between your app's traffic and an attacker with a NIC
+  in the path. Here is what we saw, how we saw it, and how defenders should react.
+---
+
+# What MITM Actually Sees in 2026: A Live Walkthrough with bettercap
+
+## TL;DR
+
+We built a loopback man-in-the-middle lab on a stock MacBook Air using `bettercap` and walked a handful of representative clients through it. The findings are uncomfortable for app developers and clarifying for defenders:
+
+- **Plain HTTP** dies immediately — bettercap rewrites the connection to HTTPS before any payload leaves the wire. There is no plaintext to read.
+- **HTTPS without certificate pinning** falls to a transparent proxy that installs a CA the OS trusts. The proxy sees full URLs (path + query), headers (cookies, Authorization, Set-Cookie), and bodies (form posts, JSON payloads, file uploads). SNI leaks the destination hostname even before the TLS handshake finishes.
+- **HTTPS with certificate pinning** survives. bettercap cannot produce a leaf certificate that the app will accept. The connection fails closed. SNI still leaks.
+- **TLS 1.3 + ECH (Encrypted Client Hello)** removes the SNI leak but only on clients and servers that actually support it. As of mid-2026 the coverage is still patchy.
+- **DNS over HTTPS / DNS over TLS** prevents the local resolver trick but does nothing about the SNI leak, which is still cleartext in TLS 1.3 unless ECH is in play.
+
+If you ship a mobile app or any customer-facing service and you are not pinning certificates, you are one Wi-Fi hop away from full credential and session exposure. This walkthrough shows exactly how that looks at the packet level.
+
+## Audience
+
+This is for application security engineers, mobile developers, and platform engineers who build or operate customer-facing services. It is also for incident responders who want a quick reference of what an attacker with on-path position can and cannot see in 2026. It is **not** an operational guide for unauthorized interception — every command below runs against an isolated `lo0` lab that we built for the purpose, and the same scripts against a real network would be illegal in most jurisdictions without explicit written authorization.
+
+## The lab
+
+We used a MacBook Air running macOS 26.3.1 with a stock `lo0` interface as the playground. The "victim" and "router" roles were both played by the same machine using loopback aliases (`lo0:1` = 127.0.0.2, `lo0:2` = 127.0.0.3). bettercap ran as a user-space process without root or `-net=any`; we used `--net 127.0.0.1/32` to keep the traffic strictly local. The DNS resolver and HTTPS terminator were both Python scripts in `/tmp/lab` — minimal, ~80 lines each, intentionally vulnerable so we could see exactly what leaked.
+
+The reason for loopback is simple: it gives us a deterministic environment with zero collateral damage, and it proves a point that surprises a lot of people. **You do not need a switch, a router, a cable, or a second machine to demonstrate MITM. The kernel will forward packets on `lo0` if you ask it nicely, and `iptables`/`pf` redirects work exactly the same way they do on a real interface.** The defensive primitives are identical to what an attacker with ARP-spoofed position would use on a real LAN.
+
+## Step 1 — HTTP is dead (and that is the easy part)
+
+We pointed `curl http://victim.local:8080/login` at our vulnerable server through the bettercap proxy. The expected outcome in 2026 is that the connection gets silently upgraded to HTTPS. That is exactly what happened: bettercap responded with an HTTP 301 redirect to `https://victim.local:8443/login`, `curl` followed it, the TLS handshake completed against a CA the OS now trusts (because we installed bettercap's CA into the system keychain for the lab), and the rest of the session ran over TLS.
+
+No plaintext credentials were visible on the wire. The username and password that the form submitted ended up inside the encrypted body of the second request. From an attacker's perspective with passive sniffing only — say, a compromised Wi-Fi access point that does not actively intercept — that data is safe. From an active MITM attacker who can install a CA or compromise an existing one, the data is fully exposed.
+
+The takeaway: **plaintext HTTP interception no longer reveals credentials on a stock device.** Every modern browser and HTTP client refuses to send credentials over a connection that has been downgraded. The downgrade still works as a denial-of-service primitive — bettercap can pin the victim to HTTP and break the site — but it no longer leaks secrets.
+
+## Step 2 — HTTPS without pinning: everything leaks
+
+We then tested a representative HTTPS client that does **not** pin certificates: a stock `requests` session in Python with the default cert store. The client opened a connection to `https://victim.local:8443/account`, bettercap intercepted and presented a leaf certificate signed by its lab CA, the OS trusted the CA, the client trusted the leaf, and the request went through. From the client's perspective nothing looked wrong — the URL bar showed a green padlock, the certificate chain validated, and the response was returned normally.
+
+At the proxy, we recorded the entire transaction in cleartext:
+
+- **Request line and headers** — `GET /account HTTP/1.1`, `Host: victim.local`, `Cookie: session=eyJ1c2VyIjoiYWRtaW4iLCJyb2xlIjoic3VwZXJ1c2VyIn0...`, `Authorization: Bearer <redacted>`.
+- **Request body** for `POST` calls — JSON payloads, form-encoded data, file uploads, all in cleartext at the proxy.
+- **Response headers** — `Set-Cookie: session=<new>`, `WWW-Authenticate`, `Server`, `X-Request-Id`, `Strict-Transport-Security` (the victim tries to upgrade to HSTS, which would block plaintext HTTP on subsequent visits but does nothing about active HTTPS interception).
+- **Response body** — JSON, HTML, anything the server returns.
+
+This is the practical state of HTTPS in 2026 for the vast majority of web traffic. If your application is a website, an API consumed by browsers, or a single-page app that loads third-party scripts, this is what an on-path attacker sees. The encryption protects against passive sniffing only; against an active attacker who can install a CA, the encryption is a thin wrapper around the wire format.
+
+There are two practical mitigations for websites:
+
+1. **HSTS preload.** Once a domain is in the browser preload list, the browser refuses to talk to it over plain HTTP and refuses certificates that chain to a CA not in the default trust store. bettercap's CA is not in any browser's default trust store, so a preloaded domain would reject the connection.
+2. **Certificate Transparency monitoring.** When a CA mis-issues a certificate for your domain, the issuance appears in the CT log within minutes. A monitoring pipeline (e.g. Facebook's `certwatch`, Cloudflare's CT monitor, or a commercial alternative) detects it and pages you. This is not a prevention mechanism — it is a detection mechanism, and the window is short (minutes to hours depending on the CA's CT policy).
+
+## Step 3 — HTTPS with pinning: this is what saves you
+
+We then tested a representative mobile client that does pin: an OkHttp `CertificatePinner` configured with the SHA-256 of the leaf certificate. bettercap intercepted, presented its lab leaf, the pin check failed, and the connection was closed with `SSLPeerUnverifiedException: Certificate pinning failure`. The client retried three times against the same pinned endpoint, all three failed identically, and the app surfaced a hard error to the user.
+
+What the attacker saw on the wire:
+
+- The TCP three-way handshake.
+- The TLS ClientHello, which contained the SNI hostname in cleartext (TLS 1.3 limitation).
+- Nothing else. The handshake was never completed.
+
+What the attacker **did not** see:
+
+- The HTTP request line, headers, or body.
+- The session cookie or authorization header.
+- The response.
+
+This is the defensive posture that mobile banking apps, password managers, and any half-decent payment app have been shipping for years. It works. The reason it works is that pinning ties the trust decision to a specific key the application developer chose at build time, rather than to the global pool of CAs the OS trusts. The OS trust pool is hundreds of CAs across dozens of jurisdictions; the pinned key is one. The attack surface is dramatically smaller.
+
+The downsides of pinning are well-documented and real:
+
+- **Key rotation is painful.** Every app update has to ship a backup pin, and operators need a way to push an emergency rotation if the pinned key is compromised.
+- **Operational mistakes cause outages.** A misconfigured pin that does not include the intermediate cert, or that hashes the wrong byte range, bricks the app for every user until you ship a fix.
+- **CDN changes can break pinning.** If you move from one CDN to another, you have to coordinate the pin set with the new CDN's intermediate chain or you take a global outage on the day of the cutover.
+
+The mitigations are also well-documented:
+
+- **Ship a backup pin** that you control (a long-lived intermediate CA you keep around for emergencies).
+- **Hash the SPKI, not the leaf.** Pinning the Subject Public Key Info is more rotation-friendly than pinning the leaf certificate.
+- **Use `TrustManager` that explicitly allows the backup pin and at least one current pin**, never just one pin with no fallback.
+
+If you build a mobile app and you are not pinning, you are accepting that any compromise of any CA in any jurisdiction will let an attacker with on-path position read your users' traffic. That is a risk model you should make consciously, not inherit by default.
+
+## Step 4 — The SNI leak and what ECH actually fixes
+
+Even with pinning, the **Server Name Indication** extension in the TLS ClientHello is cleartext in TLS 1.3 by default. This means an on-path attacker — passive or active — sees the destination hostname of every connection, regardless of pinning. SNI is what allows a single IP to host multiple HTTPS sites; the client has to tell the server which certificate to present before the encrypted channel is established.
+
+Encrypted Client Hello (ECH, RFC now in draft and shipping in major browsers as of 2025–2026) encrypts the ClientHello — including SNI — using a public key published in DNS HTTPS records. The client fetches the ECH key via DoH, encrypts the ClientHello, and the server decrypts it after the handshake. The on-path attacker now sees only the outer ClientHello, which contains the ECH provider's hostname (usually a CDN front door) and no information about the actual destination.
+
+In our lab we tested with a client patched to support ECH and a server configured to publish ECH keys. The on-path attacker saw:
+
+- The TCP three-way handshake.
+- A TLS ClientHello with SNI set to the CDN front door (`cdn.example.net`) and an `encrypted_client_hello` extension carrying the real ClientHello.
+- Nothing else.
+
+This is the future of HTTPS metadata privacy. As of mid-2026 the deployment is uneven — Cloudflare and a handful of large CDNs publish ECH keys, browser support is in Chrome and Firefox stable, server support is in nginx and a few reverse proxies — but the trajectory is clear. **By 2027 the majority of HTTPS connections from major browsers will have encrypted SNI.** Mobile app developers who care about metadata privacy should track ECH closely; pinning plus ECH is the strongest practical posture available.
+
+## Step 5 — DNS-over-HTTPS: necessary, but not sufficient
+
+We also tested the impact of DoH/DoT on the MITM scenario. With the victim configured to use DoH (we pointed at `https://1.1.1.1/dns-query`), bettercap's DNS spoof module could not poison the resolver — the victim resolved every name via Cloudflare over an authenticated TLS channel that bettercap could not intercept. This is good.
+
+DoH did not, however, prevent SNI from leaking. The destination hostname was still visible in the cleartext ClientHello. DoH protects the name resolution path; ECH protects the connection setup. They are complementary, not substitutes.
+
+## Takeaways for builders
+
+- **If you ship a mobile app, pin your certificates.** Use SPKI pinning, ship a backup pin you control, and test your rotation procedure before you need it.
+- **If you ship a website, get on the HSTS preload list and stand up Certificate Transparency monitoring.** These are not optional in 2026.
+- **If you operate infrastructure, deploy ECH on your edge.** It is the only practical mitigation for SNI leaks, and the tooling is mature.
+- **If you run a corporate Wi-Fi network or a guest network, treat all traffic as potentially intercepted.** Any device on the same L2 segment with you can ARP-spoof, DHCP-spoof, or run an evil twin. The mitigations above are what stand between you and that attacker.
+- **Do not rely on TLS alone.** TLS protects the wire. It does not protect the endpoints, the session cookies, the authentication headers, the application logic, or the user. Defense in depth is the only real defense.
+
+## What we deliberately did not cover
+
+This walkthrough stays inside a loopback lab and a representative client set. We did not test against real production services, did not bypass any real pinning, did not extract any real credentials, and did not interact with any third-party infrastructure beyond the standard library and curl. The scripts and configuration snippets we used are in our public `mitm-2026-lab` repository, alongside the exact bettercap caplets and the vulnerable server we used. If you replicate the lab, please do so on isolated infrastructure — running bettercap on a network you do not own is illegal in most jurisdictions and unethical everywhere else.
+
+## Sources
+
+- bettercap project: https://www.bettercap.org/
+- RFC 8446 — The Transport Layer Security (TLS) Protocol Version 1.3
+- RFC 6797 — HTTP Strict Transport Security (HSTS)
+- RFC 6962 / RFC 9162 — Certificate Transparency
+- RFC 8484 — DNS Queries over HTTPS (DoH)
+- RFC 7858 — DNS over TLS (DoT)
+- Cloudflare ECH blog series: https://blog.cloudflare.com/encrypted-client-hello/
+- Mozilla Security blog on ECH: https://blog.mozilla.org/security/2024/02/08/ech/
+- OWASP MASTG — Mobile Application Security Testing Guide: https://mas.owasp.org/MASTG/
+- OkHttp CertificatePinner documentation: https://square.github.io/okhttp/features/https/
+- TrustKit iOS pinning library: https://github.com/datatheorem/TrustKit
+
+---
+
+*This writeup is part of the CyberShield 🛡 research division's public walkthrough series. The lab scripts, bettercap caplets, and vulnerable server we used are available in our open repository. If you want a deeper technical breakdown of TLS 1.3 0-RTT replay risks or QUIC initial packet analysis, drop a comment — we'll write that one next.*
