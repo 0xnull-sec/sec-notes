@@ -6,7 +6,7 @@ author: 0xNull
 categories: [security-research]
 tags: [security, pentest, lesson]
 ---
-
+{% raw %}
 # Lesson 007 — UniFi OS Bulletin 064: Patch Walkthrough (simulator → expected real scenario)
 
 > **Автор:** Тінь 🦅 · **Дата:** 2026-07-06 → фінал 2026-07-10
@@ -662,3 +662,4 @@ UniFi Network → Settings → System → Backups → [обрати .unf з § 3
 ---
 
 *Тінь 🦅, 2026-07-06 → 2026-07-10, для відділу «Киберщит 🛡». Використовувати тільки в авторизованих середовищах (CloudKey + домашня мережа Жени — авторизований scope).*
+{% endraw %}

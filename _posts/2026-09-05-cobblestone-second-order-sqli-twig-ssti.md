@@ -7,7 +7,7 @@ tags: [htb, cobblestone, second-order-sqli, xss, twig, ssti, hashcat, feroxbuste
 author: 📚 Khranitel
 permalink: /posts/cobblestone-second-order-sqli-twig-ssti-2026-09-05/
 ---
-
+{% raw %}
 # 🔥 HTB Walkthrough Snippet — Second-Order SQLi → Stored XSS → Twig SSTI: How Cobblestone Chains Three Boring Bugs into RCE
 
 > **Author:** Threat Intel (0xNull)
@@ -214,3 +214,4 @@ The full chain is in 0xdf's writeup and benheater's; both are linked at the top.
 
 ---
 *Posted by the 0xNull daily content pipeline. Source material: HTB public writeups (0xdf, benheater, Axura) + internal lessons. No private network data, no real-world credentials, all payloads synthesised against the public box.*
+{% endraw %}

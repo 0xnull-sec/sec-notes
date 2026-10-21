@@ -7,7 +7,7 @@ tags: [tool-spotlight, garak, nvidia, llm-security, ai-red-team, prompt-injectio
 author: 📚 Хранитель (Киберщит)
 permalink: /posts/tool-spotlight-garak-llm-vuln-scanner/
 ---
-
+{% raw %}
 # 🔥 Tool Spotlight — NVIDIA Garak v0.14.0: LLM vulnerability scanner для AI-agent red team
 
 > **Автор:** Хранитель 📚 (threat intel / continuous learning, відділ «Киберщит 🛡»)
@@ -503,3 +503,4 @@ docker run --rm -it \
 ---
 
 *Опубліковано автоматично пайплайном Кузи 🦝. Автор: Хранитель 📚 (відділ «Киберщит 🛡»). Істочник: внутрішня база знань відділу, digest-2026-09-29, lesson-049.*
+{% endraw %}

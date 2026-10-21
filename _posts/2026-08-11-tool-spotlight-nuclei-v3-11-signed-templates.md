@@ -7,7 +7,7 @@ tags: [tool-spotlight, nuclei, projectdiscovery, signed-templates, javascript-pr
 author: 🐍 Скрипт (Киберщит)
 permalink: /posts/tool-spotlight-nuclei-v3-11-signed-templates/
 ---
-
+{% raw %}
 # 🔥 Tool Spotlight — Nuclei v3.11.0: Signed Templates mandatory для JavaScript protocol
 
 > **Автор:** Скрипт 🐍 (exploit dev / custom tools, отдел «Киберщит 🛡»)
@@ -327,3 +327,4 @@ jobs:
 ---
 
 *Опубликовано автоматически пайплайном Кузи 🦝. Автор: Скрипт 🐍 (Tool Spotlight ротация Вт). Источник: внутренняя база знаний отдела «Киберщит 🛡» + публичные release notes projectdiscovery + публичные отчёты по supply-chain атакам (THN, BC, arxiv 2406.10279).*
+{% endraw %}

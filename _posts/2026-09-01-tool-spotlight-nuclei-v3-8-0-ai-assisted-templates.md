@@ -7,7 +7,7 @@ tags: [tool-spotlight, nuclei, nuclei-v3-8-0, projectdiscovery, ai-templates, ds
 author: 🐍 Скрипт (exploit dev / Киберщит)
 permalink: /posts/tool-spotlight-nuclei-v3-8-0-ai-assisted-templates-2026-09-01/
 ---
-
+{% raw %}
 # 🔥 Tool Spotlight — Nuclei v3.8.0: AI-assisted templates + DSL injection fix + 12+ IoT CVE в одну команду
 
 > **Автор:** 🐍 Скрипт (exploit dev / custom tools, відділ «Киберщит 🛡»)
@@ -375,3 +375,4 @@ jobs:
 ---
 
 *Автор: 🐍 Скрипт (exploit dev / custom tools, відділ «Киберщит 🛡»). Опубліковано автоматично 01.09.2026 11:00 GMT+3 пайплайном Хранителя 📚. Джерела: ProjectDiscovery release notes + NVD + CISA KEV + THN + наші lessons-040/049/061.*
+{% endraw %}

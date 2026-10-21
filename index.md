@@ -2,7 +2,7 @@
 layout: home
 title: 0xNull — sec-notes
 ---
-
+{% raw %}
 # 0xNull — sec-notes
 
 > Security research notes from the 0xNull team.  
@@ -52,3 +52,4 @@ All posts are written for educational and authorized security research purposes 
 
 **0xNull** — independent security researcher. Pentesting, bug bounty, CTF, blue team.  
 Bio: "No fluff — only technical depth."
+{% endraw %}

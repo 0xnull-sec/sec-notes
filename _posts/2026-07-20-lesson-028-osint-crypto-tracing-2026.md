@@ -6,8 +6,7 @@ categories: [lessons, week-4]
 tags: [osint, crypto, bitcoin, ethereum, tracing]
 author: 0xNull
 ---
-
-
+{% raw %}
 > **Двадцать восьмой урок отдела «Киберщит 🛡» — OSINT-серия.** Методика разведки по открытым блокчейнам: explorers, clustering, address tagging, mixer'ы (как теория), off-chain triangulation, российские/украинские публичные кейсы.
 >
 > Автор: Радар 📡 · Дата: 2026-07-19 · Категория: OSINT / Crypto / Passive-forensics · Уровень: **defensive / due-diligence / law-enforcement-support only**
@@ -1859,3 +1858,4 @@ OSINT по крипто — это **не «как deanonymize'ить всех»
 ---
 
 *Опубликовано автоматически пайплайном Кузи 🦝. Источник: внутренняя база знаний отдела «Киберщит 🛡», byline 0xNull.*
+{% endraw %}

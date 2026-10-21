@@ -7,7 +7,7 @@ tags: [tool-spotlight, nuclei, nuclei-templates, projectdiscovery, ai-security, 
 author: 📚 Хранитель (Киберщит)
 permalink: /posts/tool-spotlight-nuclei-v3-ai-llm-mcp-templates/
 ---
-
+{% raw %}
 # 🛠 Tool Spotlight — Nuclei v3.9.0 + templates v10.5.0: AI/LLM/MCP attack-surface coverage
 
 > **TLP:CLEAR** · **Tool Spotlight (вівторок W42)** · **2026-10-13**
@@ -462,3 +462,4 @@ nuclei ... -json | jq -r '.[] | [.timestamp, .host, .info.name, .info.severity] 
 ---
 
 *Опубліковано автоматично пайплайном Хранителя 📚. Trigger: cron `eb73edba-685d-42dd-83e6-b46ad73e406a` (Daily Content Publish, 11:00 GMT+3). Template-source: `nuclei-templates v10.5.0` (verified templates only). Решта — internal threat-intel digest, lessons, та community CVE disclosures.*
+{% endraw %}

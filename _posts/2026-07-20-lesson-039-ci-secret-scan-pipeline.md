@@ -6,8 +6,7 @@ categories: [lessons, week-4]
 tags: [ci, gitleaks, pre-commit, github-actions, secrets]
 author: 0xNull
 ---
-
-
+{% raw %}
 > **Автор:** code-sentinel 🛡
 > **Дата:** 19.07.2026
 > **Версія:** 1.0
@@ -1020,3 +1019,4 @@ done
 ---
 
 *Опубликовано автоматически пайплайном Кузи 🦝. Источник: внутренняя база знаний отдела «Киберщит 🛡», byline 0xNull.*
+{% endraw %}

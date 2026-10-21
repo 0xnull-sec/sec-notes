@@ -6,7 +6,7 @@ author: 0xNull
 categories: [security-research]
 tags: [security, pentest, lesson]
 ---
-
+{% raw %}
 # Lesson 012 — Secret Leak Scan: витік секретів у наших `tools/`
 
 > **Автор:** code-sentinel 🛡
@@ -795,3 +795,4 @@ jobs:
 ---
 
 *Створено 06.07.2026 code-sentinel 🛡. Усі секрети в прикладах REDACTED. Повні значення — лише в Keychain.*
+{% endraw %}
